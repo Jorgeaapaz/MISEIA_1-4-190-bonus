@@ -43,7 +43,7 @@ export default function BondScreenerPage() {
     setLoading(false)
   }, [filters])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => { void load() }, [load])
 
   async function handleBuy(e: React.FormEvent) {
     e.preventDefault()

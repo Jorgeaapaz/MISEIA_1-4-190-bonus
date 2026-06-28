@@ -40,7 +40,7 @@ export default function CompliancePage() {
     setLoading(false)
   }, [token])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => { void load() }, [load])
 
   async function handleGenerate(e: React.FormEvent) {
     e.preventDefault()

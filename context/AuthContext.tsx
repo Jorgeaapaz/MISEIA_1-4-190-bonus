@@ -26,17 +26,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const stored = localStorage.getItem('bv_token')
-    if (stored) {
-      const payload = verifyToken(stored)
-      if (payload) {
-        setToken(stored)
-        setUser(payload)
-      } else {
-        localStorage.removeItem('bv_token')
+    function init() {
+      const stored = localStorage.getItem('bv_token')
+      if (stored) {
+        const payload = verifyToken(stored)
+        if (payload) {
+          setToken(stored)
+          setUser(payload)
+        } else {
+          localStorage.removeItem('bv_token')
+        }
       }
+      setIsLoading(false)
     }
-    setIsLoading(false)
+    init()
   }, [])
 
   function login(newToken: string) {

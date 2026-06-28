@@ -44,7 +44,7 @@ export default function AlertsPage() {
     setLoading(false)
   }, [token])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => { void load() }, [load])
 
   async function markRead(alertId: string) {
     setMarking(alertId)

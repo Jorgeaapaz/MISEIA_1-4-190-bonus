@@ -14,10 +14,9 @@ function VerifyContent() {
   const [message, setMessage] = useState('')
 
   useEffect(() => {
-    const token = searchParams.get('token')
-    if (!token) { setStatus('error'); setMessage('Token no encontrado en la URL'); return }
-
     async function verify() {
+      const token = searchParams.get('token')
+      if (!token) { setStatus('error'); setMessage('Token no encontrado en la URL'); return }
       try {
         const res = await fetch('/api/auth/verify', {
           method: 'POST',

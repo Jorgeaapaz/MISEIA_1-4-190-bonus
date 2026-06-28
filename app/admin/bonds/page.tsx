@@ -32,7 +32,7 @@ export default function AdminBondsPage() {
     setLoading(false)
   }, [token])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => { void load() }, [load])
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
