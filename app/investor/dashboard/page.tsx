@@ -34,7 +34,7 @@ export default function DashboardPage() {
     setLoading(false)
   }, [token])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => { void load() }, [load])
 
   if (loading) {
     return (

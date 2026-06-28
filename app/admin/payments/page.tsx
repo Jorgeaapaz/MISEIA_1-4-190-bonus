@@ -25,7 +25,7 @@ export default function AdminPaymentsPage() {
     setLoading(false)
   }, [token, filterStatus])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => { void load() }, [load])
 
   async function processPayment(paymentId: string, status: string) {
     setProcessing(paymentId)

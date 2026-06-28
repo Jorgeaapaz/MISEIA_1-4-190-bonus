@@ -2,7 +2,6 @@ import { NextRequest } from 'next/server'
 import { getCollection } from '@/lib/db'
 import { getTokenFromRequest } from '@/lib/auth'
 import { Bond } from '@/lib/types'
-import { ObjectId } from 'mongodb'
 
 export async function GET(req: NextRequest) {
   try {

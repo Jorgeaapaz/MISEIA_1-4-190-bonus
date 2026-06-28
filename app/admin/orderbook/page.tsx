@@ -27,7 +27,7 @@ export default function OrderBookPage() {
     setLoading(false)
   }, [token, selectedBond])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => { void load() }, [load])
 
   const bondMap = new Map(bonds.map(b => [String(b._id), b]))
 
