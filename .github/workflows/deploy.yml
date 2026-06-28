@@ -40,12 +40,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Write SSH private key
-        run: |
-          install -dm 700 ~/.ssh
-          echo "${{ secrets.VM_SSH_KEY }}" | base64 -d > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H "${{ secrets.VM_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+      - name: Setup SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.VM_SSH_KEY }}
+
+      - name: Add VM to known hosts
+        run: ssh-keyscan -H "${{ secrets.VM_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
 
       - name: Write production env file
         run: echo "${{ secrets.ENV_PRODUCTION }}" > .env.production
@@ -58,16 +59,16 @@ jobs:
 
       - name: Copy image and env to VM
         run: |
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+          ssh -o StrictHostKeyChecking=no \
             ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} \
             "mkdir -p ~/MISEIA1-4-190-bonus_bondvault"
-          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+          scp -o StrictHostKeyChecking=no \
             bondvault.tar.gz .env.production \
             ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:~/MISEIA1-4-190-bonus_bondvault/
 
       - name: Deploy container on VM
         run: |
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+          ssh -o StrictHostKeyChecking=no \
             ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'ENDSSH'
           set -e
           cd ~/MISEIA1-4-190-bonus_bondvault
