@@ -69,7 +69,7 @@ deploy:
         --network miseia-net \
         --env-file .env.production \
         --label "traefik.enable=true" \
-        --label "traefik.http.routers.bondvault.rule=Host(\`bondvault.deviaaps.com\`)" \
+        --label 'traefik.http.routers.bondvault.rule=Host(`bondvault.deviaaps.com`)' \
         --label "traefik.http.routers.bondvault.entrypoints=websecure" \
         --label "traefik.http.routers.bondvault.tls=true" \
         --label "traefik.http.routers.bondvault.tls.certresolver=cloudflare" \
