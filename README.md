@@ -81,6 +81,52 @@ bonus/
 
 ---
 
+## Architecture
+
+```mermaid
+graph TD
+    Browser -->|HTTPS| Traefik
+    Traefik -->|HTTP| NextJS[Next.js App :3000]
+    NextJS -->|MongoDB driver| MongoDB[(MongoDB :27020)]
+    NextJS -->|S3 API| RustFS[(RustFS Object Storage)]
+    NextJS -->|SMTP| MailHog[(MailHog Email)]
+    Browser -->|JWT in localStorage| NextJS
+
+    subgraph Docker miseia-net
+        Traefik
+        NextJS
+        MongoDB
+        RustFS
+        MailHog
+    end
+```
+
+---
+
+## Architecture Decisions
+
+### Decision 1: JWT in localStorage vs. HttpOnly Cookies
+- **Chose:** JWT stored in `localStorage`
+- **Why:** The project spec explicitly forbids cookies. Magic-link auth sends one-time tokens by email; `localStorage` lets client-side JS forward the token in `Authorization: Bearer` headers for API calls without cookie-aware fetch wrappers.
+- **Trade-off:** localStorage is vulnerable to XSS. Mitigated by strict CSP headers. HttpOnly cookies would prevent XSS token theft but require CSRF protection and complicate the SPA architecture.
+
+### Decision 2: MongoDB native driver vs. Mongoose
+- **Chose:** MongoDB native driver via `lib/db.ts` singleton
+- **Why:** Mongoose's runtime schema validation duplicates TypeScript interfaces already defined in `lib/types.ts`. The native driver is lighter (~200 KB vs ~800 KB), provides direct access to aggregation pipelines for portfolio calculations, and avoids schema drift between runtime validators and compile-time types.
+- **Trade-off:** No automatic schema enforcement at the driver level — correctness relies on TypeScript at compile time and input validation in API routes.
+
+---
+
+## AI-Assisted Development
+
+Initial architecture skeleton (folder structure, TypeScript interfaces, auth flow) was generated with AI assistance. Notable changes made during review:
+
+- **Coupon rate representation:** AI draft used floating-point percentages (`6.5`); changed to basis-point integers (`650`) to avoid floating-point drift in financial calculations.
+- **Token storage:** AI draft used an in-memory Map for magic tokens; replaced with MongoDB TTL-indexed `magic_tokens` collection for persistence across restarts.
+- **Error response shape:** Standardized all API error responses to `{ error: string }` with explicit HTTP status codes — AI draft mixed plain strings and objects inconsistently.
+
+---
+
 ## Design Patterns / Architecture
 
 | Pattern | Implementation |
@@ -175,6 +221,19 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser. MailHog UI is available at [http://localhost:8025](http://localhost:8025).
 
+### Run tests
+
+```bash
+# Unit tests
+npm run test
+
+# Unit tests with coverage report
+npm run test:coverage
+
+# End-to-end tests (requires app running on :3000)
+npm run test:e2e
+```
+
 ---
 
 ## Example Flows
@@ -217,3 +276,11 @@ GET /api/auth/verify?token=abc123
 GET /api/bonds  (with investor JWT)
 → 403 Forbidden  { "error": "Insufficient permissions" }
 ```
+
+---
+
+## Production Deploy
+
+The application is deployed at **https://bondvault.deviaaps.com** via GitHub Actions CI/CD to a GCP Ubuntu VM running Docker + Traefik.
+
+See `.github/workflows/deploy.yml` for the full pipeline.
