@@ -11,6 +11,8 @@ variables:
 test:
   stage: test
   image: node:20-alpine
+  tags:
+    - cloudrun
   script:
     - npm ci
     - npm run lint
@@ -22,6 +24,8 @@ test:
 build:
   stage: build
   image: docker:24
+  tags:
+    - cloudrun
   services:
     - docker:24-dind
   variables:
@@ -40,6 +44,8 @@ build:
 deploy:
   stage: deploy
   image: alpine:latest
+  tags:
+    - cloudrun
   dependencies:
     - build
   before_script:
