@@ -1,11 +1,5 @@
 stages:
   - test
-  - build
-  - deploy
-
-variables:
-  DEPLOY_DIR: ~/MISEIA1-4-190-bonus_bondvault
-  IMAGE_NAME: bondvault
 
 # ── Stage 1: Lint + Unit Tests ───────────────────────────────────────────────
 test:
@@ -19,67 +13,3 @@ test:
     - npm run test
   variables:
     JWT_SECRET: "test-secret-32-chars-minimum-ok!!"
-
-# ── Stage 2: Build Docker image ──────────────────────────────────────────────
-build:
-  stage: build
-  image: docker:24
-  tags:
-    - cloudrun
-  services:
-    - docker:24-dind
-  variables:
-    DOCKER_TLS_CERTDIR: "/certs"
-  script:
-    - docker build --build-arg NODE_ENV=production -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA .
-    - docker save $IMAGE_NAME:$CI_COMMIT_SHORT_SHA | gzip > bondvault.tar.gz
-  artifacts:
-    paths:
-      - bondvault.tar.gz
-    expire_in: 1 hour
-  only:
-    - master
-
-# ── Stage 3: Deploy to GCP VM ────────────────────────────────────────────────
-deploy:
-  stage: deploy
-  image: alpine:latest
-  tags:
-    - cloudrun
-  dependencies:
-    - build
-  before_script:
-    - apk add --no-cache openssh-client
-    - eval $(ssh-agent -s)
-    - chmod 400 "$VM_SSH_KEY"
-    - ssh-add "$VM_SSH_KEY"
-    - mkdir -p ~/.ssh && chmod 700 ~/.ssh
-    - ssh-keyscan -H 34.174.56.186 >> ~/.ssh/known_hosts 2>/dev/null
-  script:
-    - echo "$ENV_PRODUCTION" > .env.production
-    - scp bondvault.tar.gz gcvmuser@34.174.56.186:$DEPLOY_DIR/
-    - scp .env.production  gcvmuser@34.174.56.186:$DEPLOY_DIR/.env.production
-    - |
-      ssh gcvmuser@34.174.56.186 << ENDSSH
-      set -e
-      cd $DEPLOY_DIR
-      docker load < bondvault.tar.gz
-      docker stop bondvault 2>/dev/null || true
-      docker rm   bondvault 2>/dev/null || true
-      docker run -d \
-        --name bondvault \
-        --network miseia-net \
-        --env-file .env.production \
-        --label "traefik.enable=true" \
-        --label 'traefik.http.routers.bondvault.rule=Host(`bondvault.deviaaps.com`)' \
-        --label "traefik.http.routers.bondvault.entrypoints=websecure" \
-        --label "traefik.http.routers.bondvault.tls=true" \
-        --label "traefik.http.routers.bondvault.tls.certresolver=cloudflare" \
-        --label "traefik.http.services.bondvault-svc.loadbalancer.server.port=3000" \
-        --label "traefik.docker.network=miseia-net" \
-        --restart unless-stopped \
-        bondvault:$CI_COMMIT_SHORT_SHA
-      docker image prune -f
-      ENDSSH
-  only:
-    - master
